@@ -1,48 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Tue Aug 07 14:42:32 2021
+
 @author: silviapagliarini
 """
 import os
 import numpy as np
+import scipy.signal as signal
 import pandas as pd
 import csv
-
-def list(args):
-    """
-    Create a list of baby ids. This is the first step to run all the following pre-processing and analysis.
-    In the output .csv file there is
-    - baby ID
-    - age (in days)ß
-    """
-    listDir = glob2.glob(args.data_dir + '/0*')
-    with open(args.data_dir + '/baby_list_basic.csv', 'w') as csvfile:
-        # creating a csv writer object
-        csvwriter = csv.writer(csvfile)
-
-        # writing the fields
-        csvwriter.writerow(['ID', 'AGE'])
-
-        i = 0
-        while i<len(listDir):
-            name = os.path.basename(listDir[i])
-            age = int(name[6])*365 + int(name[8]) * 30 + int(name[10])
-            csvwriter.writerow([name, age])
-            i = i + 1
-
-    print('Done')
+import arff
+from pydub import AudioSegment
+import scipy.io.wavfile as wav
 
 def opensmile_executable(data, baby_id, classes, args):
     """
-    Function to generate a text file executable on shell to compute multiple times opensmile features.
-    If option labels_creation == True, it also generates a csv file containing a list sounds and correspondent labels.
+    Generate a text file executable on shell to compute multiple times opensmile features.
+    If option labels_creation == True, it also generates a csv file containing number of the sound and label.
+
+    INPUT
+    - path to directory
+    - type of dataset (can be a single directory, or a dataset keywords): see args.baby_id
+
+    OUTPUT
+    A text file for each directory with the command lines to compute MFCC for each extracted sound in the directory.
     """
     f = open(args.data_dir + '/' + 'executable_opensmile_' + baby_id + '.txt', 'w+')
 
     i = 0
     while i < len(data):
         #name = './build/progsrc/smilextract/SMILExtract -C config/mfcc/MFCC12_0_D_A.conf -I /Users/silviapagliarini/Documents/Datasets/InitialDatasets/singleVoc/single_vocalizations/'
-        name = './build/progsrc/smilextract/SMILExtract -C config/mfcc/MFCC12_0_D_A.conf -I /Users/silviapagliarini/Documents/Datasets/completeDataset/'
+        #name = './build/progsrc/smilextract/SMILExtract -C config/mfcc/MFCC12_0_D_A.conf -I /Users/silviapagliarini/Documents/Datasets/completeDataset/'
+        name = './build/progsrc/smilextract/SMILExtract -C config/mfcc/MFCC12_0_D_A.conf -I /Users/silviapagliarini/Documents/Datasets/subsetSilence/'
         #name = './build/progsrc/smilextract/SMILExtract -C config/mfcc/MFCC12_0_D_A.conf -I /Users/silviapagliarini/Documents/Datasets/HumanLabels/exp1'
         #name = './build/progsrc/smilextract/SMILExtract -C config/mfcc/MFCC12_0_D_A.conf -I /Users/silviapagliarini/Documents/BabbleNN/interspeech_Wave'
 
@@ -52,7 +42,8 @@ def opensmile_executable(data, baby_id, classes, args):
 
         else:
             #output_dir = '/Users/silviapagliarini/Documents/opensmile/HumanData_analysis/humanVSlena/human'
-            output_dir = '/Users/silviapagliarini/Documents/opensmile/HumanData_analysis/completeDataset'
+            #output_dir = '/Users/silviapagliarini/Documents/opensmile/HumanData_analysis/completeDataset'
+            output_dir = '/Users/silviapagliarini/Documents/opensmile/HumanData_analysis/subsetSilence'
             os.makedirs(output_dir + '/' + baby_id, exist_ok=True)
             for c in range(0,len(classes)):
                 os.makedirs(output_dir + '/' + baby_id + '/' + classes[c], exist_ok=True)
@@ -88,17 +79,85 @@ def opensmile_executable(data, baby_id, classes, args):
 
     print('Done')
 
+def add_silence(data, args):
+    """
+    Add silence to existing recordings.
+
+    INPUT
+    List of the recordings containing single syllables (previously selected).
+    Make a copy of the directory, since this code is going to overwrite the recordings.
+
+    OUTPUT
+    Recordings containing filtered single syllables + silence for a total duration equal to one second.
+    """
+    duration = np.zeros((np.size(data),))
+
+    for i in range(0, len(data)):
+        #read the syllable
+        sr, samples = wav.read(data[i])
+
+        if samples.size == 0:
+            os.remove(data[i])
+
+    for i in range(0, len(data)):
+        #read the syllable
+        or_rec = AudioSegment.from_wav(data[i])
+        #or_rec = or_rec.high_pass_filter(700, order=5)
+
+        duration[i] = np.size(or_rec.get_array_of_samples())
+        if np.int(1000*duration[i]/args.sr)<args.sd:
+            # compute silence and add to the recording
+            silence = AudioSegment.silent(duration=args.sd-np.round(1000*np.size(or_rec.get_array_of_samples())/args.sr))
+
+            sound = or_rec + silence
+            # export the audio (overwriting the old one)
+            sound.export(data[i], format ="wav")
+
+        elif np.int(1000*duration[i]/args.sr)>args.sd:
+            sound = or_rec[0:args.sd]
+            # export the audio (overwriting the old one)
+            sound.export(data[i], format="wav")
+
+    print('Done')
+
+def list(args):
+    """
+    Create a list of all the babies in the dataset in order to simplify the followinf steps of the analysis.
+
+    INPUT
+    - path to directory (subdirectories should be the single family directories).
+
+    OUTPUT
+    - .csv file with name of the baby and age of the baby in days.
+    """
+    listDir = glob2.glob(args.data_dir + '/0*')
+    with open(args.data_dir + '/baby_list_basic.csv', 'w') as csvfile:
+        # creating a csv writer object
+        csvwriter = csv.writer(csvfile)
+
+        # writing the fields
+        csvwriter.writerow(['ID', 'AGE'])
+
+        i = 0
+        while i<len(listDir):
+            name = os.path.basename(listDir[i])
+            age = int(name[6])*365 + int(name[8]) * 30 + int(name[10])
+            csvwriter.writerow([name, age])
+            i = i + 1
+
+    print('Done')
+
 def merge_labels(babies, args):
     """
-    Function to compare lena labels and human labels, and build a vocalizations extraction friendly .csv (which
-    is needed to run the matlab code and extract the vocalizations using the revised label.
+    Create a LENA-like .csv with the human corrections included. When a label has been identified as wrong, it is substitute with the
+    noise lable NOF.
 
-    The function substitutes noisy CHNSP and CHNNSP vocalizations with NOF (noise).
+    INPUT
+    - path to directory
+    - list of babies
 
-    The output is a .csv file having the same structure as to the one given by lena.:
-    - type
-    - start (in seconds)
-    - end (in seconds)
+    OUTPUT
+    .csv file containing cleaned labels.
     """
     for i in range(0,len(babies)):
         print(babies[i])
@@ -142,12 +201,17 @@ if __name__ == '__main__':
     import sys
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--option', type=str, choices=['list', 'executeOS', 'merge_human_labels'])
+    parser.add_argument('--option', type=str, choices=['LENAlabels', 'HUMANlabels', 'list', 'executeOS'])
     parser.add_argument('--data_dir', type=str)
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--baby_id', type = str)
     parser.add_argument('--labels_creation', type = bool, default=False)
-    parser.add_argument('--dataset', type=str, choices=['singleBABY', 'age', 'age_within'])
+
+    uniform_duration_args = parser.add_argument_group('Uniform')
+    uniform_duration_args.add_argument('--sd', type=int,
+                                       help='Expected sound duration in milliseconds', default = 1000)
+    uniform_duration_args.add_argument('--sr', type=int, help='Expected sampling rate',
+                                       default=16000)
 
     args = parser.parse_args()
 
@@ -155,15 +219,11 @@ if __name__ == '__main__':
         if not os.path.isdir(args.data_dir + '/' + args.output_dir):
             os.makedirs(args.data_dir + '/' + args.output_dir)
 
-
-    if args.option == 'list':
-        list(args)
-
     if args.option == 'executeOS':
         # Labels (change only if needed)
         # classes = ['B', 'S', 'N', 'MS', 'ME', 'M', 'OAS', 'SLEEP']
-        #classes = ['MAN', 'FAN', 'CHNSP', 'CHNNSP']
-        classes = ['CHNNSP']
+        classes = ['MAN', 'FAN', 'CHNSP', 'CHNNSP']
+        #classes = ['CHNNSP']
 
         if args.baby_id == 'initial':
             # List of babies
@@ -201,13 +261,31 @@ if __name__ == '__main__':
 
                     opensmile_executable(dataset, babies, classes, args)
 
+        elif args.baby_id == 'subset':
+            # List of babies
+            summary = pd.read_csv(args.data_dir + '/' + 'baby_list.csv')
+            summary = pd.DataFrame.to_numpy(summary)
+            babies = summary[:, 0]
+            for j in range(0, len(babies)):
+                dataset = sorted(glob2.glob(args.data_dir + '/' + babies[j][0:4] + '/' + babies[j] + '_segments' + '/' + '*.wav'))
+                opensmile_executable(dataset, babies[j], classes, args)
+
         else:
             dataset = sorted(glob2.glob(args.data_dir + '/' + args.baby_id + '_segments/' + '*.wav'))
             opensmile_executable(dataset, args.baby_id, classes, args)
+
+    if args.option == 'list':
+        list(args)
+
+    if args.option == 'silence':
+        # Load data
+        dataset = sorted(glob2.glob(args.data_dir + '/' + args.baby_id[0:4] + '/' + args.baby_id + '_segments' + '/' + '*.wav'))
+    
+        add_silence(dataset, args)
 
     if args.option == 'merge_human_labels':
         babies_csv = pd.read_csv(args.data_dir + '/baby_list.csv')
         babies = babies_csv["name"]
         merge_labels(babies, args)
 
-    ### Example: python3.6 BabyExperience_utils.py --data_dir /Users/labadmin/Documents/Silvia/HumanData --option executeOS
+    ### Example: python3 BabyExperience.py --data_dir /Users/labadmin/Documents/Silvia/HumanData --option list

@@ -6,6 +6,7 @@ Created on Tue Aug 07 14:42:32 2021
 @author: silviapagliarini
 """
 import os
+import random
 import scipy as sp
 import numpy as np
 import matplotlib.animation as animation
@@ -30,16 +31,41 @@ import arff
 import matplotlib
 import seaborn as sns
 
-def multidim_all(classes, babies, age, args):
-    """
-    Function to compare multidimensional sounds across families.
-    """
+def multidim_all(classes, babies, age, color, args):
     # Define colormap
-    classes_colors = ['darkblue', 'red', 'gold']
+    classes_colors = ['darkblue', 'red', 'gold', 'darkgreen']
     classes_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("manual", classes_colors)
     plt.register_cmap("manual", classes_cmap)
 
-    # Labels
+    # New list to avoid duplicate names (to join recordings)
+    new_babies = []
+    new_age = []
+    new_color = []
+    for b in range(0, len(babies)):
+        print(babies[b])
+        if babies[b][-1] == 'a':
+            new_babies.append(babies[b][0:-1])
+            new_age.append(age[b])
+            new_color.append(color[b])
+        elif babies[b][-1] == 'b' or babies[b][-1] == 'c' or babies[b][-1] == 'd':
+            pass
+        else:
+            new_babies.append(babies[b])
+            new_age.append(age[b])
+            new_color.append(color[b])
+
+    with open(args.data_dir + '/' + 'new_baby_list.csv', 'w') as csvfile:
+        # creating a csv writer object
+        csvwriter = csv.writer(csvfile)
+
+        # writing the fields
+        csvwriter.writerow(['ID', 'AGE', 'COLOR'])
+
+        i = 0
+        while i < len(new_babies):
+            csvwriter.writerow([new_babies[i], new_age[i], new_color[i]])
+            i = i + 1
+
     labels = []
     colors = []
     sum_mfcc_list = []
@@ -48,25 +74,27 @@ def multidim_all(classes, babies, age, args):
     babyname = []
     timename = []
     agegroup = []
-    for b in range(0, len(babies)):
-        print(babies[b])
-
+    for b in range(0, len(new_babies)):
         for c in range(0, len(classes)):
-            # Load data
-            data = glob2.glob(args.data_dir + '/' + babies[b] + '/' + classes[c] + '/' + '*.mfcc.csv')
+            data = glob2.glob(args.data_dir + '/' + new_babies[b] + '*/' + classes[c] + '/' + '*.mfcc.csv')
+            data = np.asarray(data)
+            print(len(data))
 
             if args.portion == True:
-                how_many = args.portion_size
-                if how_many > len(data):
-                    how_many = len(data)
-            else:
-                how_many = len(data)
+                # select random subset
+                randomlist = []
+                for i in range(0, int(args.portion_size)):
+                    n = random.randint(0, len(data)-1)
+                    randomlist.append(n)
+                randomlist = np.asarray(randomlist)
+                data = data[randomlist]
+
+            how_many = len(data)
 
             i = 0
             while i < how_many:
-                babyname.append(babies[b])
+                babyname.append(new_babies[b])
                 basename_aux = os.path.basename(data[i])
-                # timename_aux = basename_aux[20:20+5]
                 timename_aux = basename_aux[22:22 + 5]
                 if timename_aux[-1] == '_':
                     timename_aux = timename_aux[0:-1]
@@ -185,16 +213,16 @@ def multidim_all(classes, babies, age, args):
     summary = pd.read_csv(args.data_dir + '/' + 'ALL_BABYADULT_summary_LENAlabels_' + '_opensmile_day_UMAP_mfcc.csv')
     summary = pd.DataFrame.to_numpy(summary)
 
-    for b in range(0, len(babies)):
-        basename_aux = summary[:,1][np.where(summary[:,2]==babies[b])]
-        timename_aux = summary[:,3][np.where(summary[:,2]==babies[b])]
-        labels_aux = summary[:,4][np.where(summary[:,2]==babies[b])]
-        labelsID_aux = summary[:,5][np.where(summary[:,2]==babies[b])]
-        umapXsum = summary[:,6][np.where(summary[:,2]==babies[b])]
-        umapYsum = summary[:,7][np.where(summary[:,2]==babies[b])]
-        umapXavg = summary[:,8][np.where(summary[:,2]==babies[b])]
-        umapYavg = summary[:,9][np.where(summary[:,2]==babies[b])]
-        with open(args.data_dir + '/' + 'ALL_BABYADULTsummary_' + babies[
+    for b in range(0, len(new_babies)):
+        basename_aux = summary[:,1][np.where(summary[:,2]==new_babies[b])]
+        timename_aux = summary[:,3][np.where(summary[:,2]==new_babies[b])]
+        labels_aux = summary[:,4][np.where(summary[:,2]==new_babies[b])]
+        labelsID_aux = summary[:,5][np.where(summary[:,2]==new_babies[b])]
+        umapXsum = summary[:,6][np.where(summary[:,2]==new_babies[b])]
+        umapYsum = summary[:,7][np.where(summary[:,2]==new_babies[b])]
+        umapXavg = summary[:,8][np.where(summary[:,2]==new_babies[b])]
+        umapYavg = summary[:,9][np.where(summary[:,2]==new_babies[b])]
+        with open(args.data_dir + '/' + 'ALL_BABYADULTsummary_' + new_babies[
             b] + '_summary_LENAlabels_' + '_opensmile_day_UMAP_mfcc.csv',
                   'w') as csvfile:
             # creating a csv writer object
@@ -215,11 +243,85 @@ def multidim_all(classes, babies, age, args):
     plt.close('all')
     print('Done')
 
+def my_plot(classes, args):
+    # Define colormap
+    classes_colors = ['darkblue', 'green', 'red', 'gold']
+    #classes_colors = ['darkgreen', 'darkblue', 'red', 'gold']
+    classes_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("manual", classes_colors)
+    plt.register_cmap("manual", classes_cmap)
+
+    age_classes = ['3mo', '6mo', '9mo', '18mo', 'FAN-MAN']
+    age_classes_colors = ['red', 'gold', 'navy', 'darkgreen', 'lightgray']
+    age_classes_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("age_manual", age_classes_colors)
+    plt.register_cmap("age_manual", age_classes_cmap)
+
+    legend_elements = []
+    for l in range(0, len(classes)):
+        legend_elements.append(
+            Line2D([], [], marker='o', color=classes_colors[l], markersize=10, label=classes[l]))
+
+    legend_elements_age = []
+    for l in range(0, len(age_classes)):
+        legend_elements_age.append(
+            Line2D([], [], marker='o', color=age_classes_colors[l], markersize=10, label=age_classes[l]))
+
+    # Load data
+    #summary = pd.read_csv(args.data_dir + '/' + 'summary_' + args.baby_id +'_LENAlabels__opensmile_day_UMAP_mfcc.csv')
+    summary = pd.read_csv(args.data_dir + '/' + 'ALL_BABYADULT_summary_LENAlabels_' + '_opensmile_day_UMAP_mfcc.csv')
+    # Sort data frame
+    summary = summary.sort_values("time ID", ignore_index=True)
+    #MEMO ['umap ID', 'filename', 'time ID', 'label', 'umap sum x', 'umap sum y', 'umap avg x', 'umap avg y']
+    # Check order
+    #print(summary["time ID"])
+    #input()
+
+    umapX = summary["umap sum x"]
+    umapY = summary["umap sum y"]
+
+    colors = []
+    i = 0
+    while i < len(umapX):
+        j = 0
+        while j < len(classes):
+            if summary["label"][i] == classes[j]:
+                colors.append(classes_colors[j])
+            j = j + 1
+        i = i + 1
+
+    colors_age = ['gray' for i in range(0, len(umapX))]
+    for i in range(0, len(umapX)):
+        #if summary["label"][i] == 'CHNSP' or summary["label"][i] == 'CHNNSP':
+        if summary["label"][i] == 'CHNSP':
+            for k in range(0, len(age_classes) -1):
+                if summary["age"][i] == age_classes[k]:
+                    colors_age[i] = age_classes_colors[k]
+
+    #plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.scatter(umapX, umapY, c=colors, cmap='manual', s=0.1, alpha=0.8)
+    ax.set_xlim(np.min(umapX)-0.5, np.max(umapX)+0.5)
+    ax.set_ylim(np.min(umapY)-0.5, np.max(umapY)+0.5)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.legend(handles=legend_elements, fontsize=20)
+    plt.savefig(args.data_dir + '/' + "_UMAPmanual.pdf")
+
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.scatter(umapX, umapY, c=colors_age, cmap='age_manual', s=0.1, alpha=0.8)
+    ax.set_xlim(np.min(umapX)-0.5, np.max(umapX)+0.5)
+    ax.set_ylim(np.min(umapY)-0.5, np.max(umapY)+0.5)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.legend(handles=legend_elements_age, fontsize=20)
+    plt.savefig(args.data_dir + '/' + "_UMAPmanual_age.pdf")
+
+    print('Done')
+
 def stat(classes, baby_id, args):
-    """
-    Function to compute statistical properties.
-    TODO: check this later and keep only what we really comput. Try to make it easier to change which class to include.
-    """
     # Load data
     if args.all == True:
         summary = pd.read_csv(
@@ -395,6 +497,7 @@ def stat(classes, baby_id, args):
         entropy.append(-H)
 
     # covariance based on baby production
+    # TODO: change this part to a more general part indipendent on how many classes we have
     adult_FANpre = []
     adult_FANpost = []
     baby_CHNSP = []
@@ -414,21 +517,24 @@ def stat(classes, baby_id, args):
     corr_coeff_adultFANpost_babyCHNSP = np.corrcoef(adult_FANpost, baby_CHNSP)
     corr_coeff_baby_CHNSP_self = np.corrcoef(all_umap[1,:], all_umap[1,:])
 
-    # Baby sound (no cry) versus caregiver: distance between centroids
-    # init just in case
-    dist_CHNSP_MAN_tSNE = 0
-    dist_CHNSP_MAN_PCA = 0
-    dist_CHNSP_MAN = 0
+    # Across classes centroids distance
     centroids = np.asarray(centroids)
-    dist_CHNSP_FAN = np.linalg.norm(centroids[0]-centroids[1])
     centroids_PCA = np.asarray(centroids_PCA)
-    dist_CHNSP_FAN_PCA = np.linalg.norm(centroids_PCA[0]-centroids_PCA[1])
     centroids_tSNE = np.asarray(centroids_tSNE)
-    dist_CHNSP_FAN_tSNE = np.linalg.norm(centroids_tSNE[0] - centroids_tSNE[1])
-    if len(classes)>2:
-        dist_CHNSP_MAN_tSNE = np.linalg.norm(centroids_tSNE[0] - centroids_tSNE[2])
-        dist_CHNSP_MAN_PCA = np.linalg.norm(centroids_PCA[0]-centroids_PCA[2])
-        dist_CHNSP_MAN = np.linalg.norm(centroids[0] - centroids[2])
+    dist_centroids = np.zeros((len(classes), len(classes)))
+    for i in range(0, len(classes)):
+        for j in range(0, len(classes)):
+            dist_centroids[i,j] = np.linalg.norm(centroids[i]-centroids[j])
+
+    dist_centroids_PCA = np.zeros((len(classes), len(classes)))
+    for i in range(0, len(classes)):
+        for j in range(0, len(classes)):
+            dist_centroids_PCA[i,j] = np.linalg.norm(centroids_PCA[i]-centroids_PCA[j])
+
+    dist_centroids_tSNE = np.zeros((len(classes), len(classes)))
+    for i in range(0, len(classes)):
+        for j in range(0, len(classes)):
+            dist_centroids_tSNE[i,j] = np.linalg.norm(centroids_tSNE[i]-centroids_tSNE[j])
 
     # From spectrogram features
     # TODO: later after abstract maybe
@@ -475,106 +581,21 @@ def stat(classes, baby_id, args):
                        'cov_BBself_pre': cov_babyCHNSP_self_pre,
                        'corr_adultFANpre_babyCHNSP': corr_coeff_adultFANpre_babyCHNSP,
                        'corr_adultFANpost_babyCHNSP': corr_coeff_adultFANpost_babyCHNSP, 'corr_BBself': corr_coeff_baby_CHNSP_self,
-                       'Dist_centrMAN': dist_CHNSP_MAN, 'Dist_centrFAN': dist_CHNSP_FAN, 'centroids': centroids, 'centroid_mean_dis': centroids_mean_dist,
-                       'Dist_centrMAN_PCA': dist_CHNSP_MAN_PCA, 'Dist_centrFAN_PCA': dist_CHNSP_FAN_PCA, 'centroids_PCA': centroids_PCA, 'centroid_mean_dis_PCA': centroids_mean_dist_PCA,
-                       'Dist_centrMAN_tSNE': dist_CHNSP_MAN_tSNE, 'Dist_centrFAN_tSNE': dist_CHNSP_FAN_tSNE, 'centroids_tSNE': centroids_tSNE, 'centroid_mean_dis_tSNE': centroids_mean_dist_tSNE,
+                       'Dist_centr_UMAP': dist_centroids, 'centroids': centroids, 'centroid_mean_dis': centroids_mean_dist,
+                       'Dist_centr_PCA': dist_centroids_PCA, 'centroids_PCA': centroids_PCA, 'centroid_mean_dis_PCA': centroids_mean_dist_PCA,
+                       'Dist_centr_tSNE': dist_centroids_tSNE, 'centroids_tSNE': centroids_tSNE, 'centroid_mean_dis_tSNE': centroids_mean_dist_tSNE,
                        'Ratio': ratio, 'Wiener_entropy': wiener, 'Mean_pitch': mean_pitch, 'Min_pitch': min_pitch,
                        'Max_pitch': max_pitch, 'All_pitches': pitch, 'L2norm': L2norm}
     np.save(args.data_dir + '/' + baby_id + '_stat_summary.npy', dataset_summary)
 
     print('Done')
 
-def my_plot(classes, args):
-    """
-    Manual UMAP plot:
-    - classes comparison
-    - age comparison
-    - example of one family: classes and centroids
-    """
-    # Define colormap
-    classes_colors = ['darkblue', 'red', 'gold']
-    classes_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("manual", classes_colors)
-    plt.register_cmap("manual", classes_cmap)
+def plot_stat_complete(classes, args):
+    from matplotlib.lines import Line2D
+    import pyreadr as readR
 
-    age_classes = ['3mo', '6mo', '9mo', '18mo', 'FAN-MAN']
-    age_classes_colors = ['red', 'gold', 'navy', 'darkgreen', 'lightgray']
-    age_classes_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("age_manual", age_classes_colors)
-    plt.register_cmap("age_manual", age_classes_cmap)
-
-    legend_elements = []
-    for l in range(0, len(classes)):
-        legend_elements.append(
-            Line2D([], [], marker='o', color=classes_colors[l], markersize=10, label=classes[l]))
-
-    legend_elements_age = []
-    for l in range(0, len(age_classes)):
-        legend_elements_age.append(
-            Line2D([], [], marker='o', color=age_classes_colors[l], markersize=10, label=age_classes[l]))
-
-    # Load data
-    #summary = pd.read_csv(args.data_dir + '/' + 'summary_' + args.baby_id +'_LENAlabels__opensmile_day_UMAP_mfcc.csv')
-    summary = pd.read_csv(args.data_dir + '/' + 'ALL_BABYADULT_summary_LENAlabels_' + '_opensmile_day_UMAP_mfcc.csv')
-    # Sort data frame
-    summary = summary.sort_values("time ID", ignore_index=True)
-    #MEMO ['umap ID', 'filename', 'time ID', 'label', 'umap sum x', 'umap sum y', 'umap avg x', 'umap avg y']
-    # Check order
-    #print(summary["time ID"])
-    #input()
-
-    umapX = summary["umap sum x"]
-    umapY = summary["umap sum y"]
-
-    colors = []
-    i = 0
-    while i < len(umapX):
-        j = 0
-        while j < len(classes):
-            if summary["label"][i] == classes[j]:
-                colors.append(classes_colors[j])
-            j = j + 1
-        i = i + 1
-
-    colors_age = ['gray' for i in range(0, len(umapX))]
-    for i in range(0, len(umapX)):
-        #if summary["label"][i] == 'CHNSP' or summary["label"][i] == 'CHNNSP':
-        if summary["label"][i] == 'CHNSP':
-            for k in range(0, len(age_classes) -1):
-                if summary["age"][i] == age_classes[k]:
-                    colors_age[i] = age_classes_colors[k]
-
-    #plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.scatter(umapX, umapY, c=colors, cmap='manual', s=0.1, alpha=0.8)
-    ax.set_xlim(np.min(umapX)-0.5, np.max(umapX)+0.5)
-    ax.set_ylim(np.min(umapY)-0.5, np.max(umapY)+0.5)
-    #plt.savefig(args.data_dir + '/' + args.baby_id + "_UMAPmanual.pdf")
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.legend(handles=legend_elements, fontsize=20)
-    plt.savefig(args.data_dir + '/' + "_UMAPmanual.pdf")
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    ax.scatter(umapX, umapY, c=colors_age, cmap='age_manual', s=0.1, alpha=0.8)
-    ax.set_xlim(np.min(umapX)-0.5, np.max(umapX)+0.5)
-    ax.set_ylim(np.min(umapY)-0.5, np.max(umapY)+0.5)
-    #plt.savefig(args.data_dir + '/' + args.baby_id + "_UMAPmanual.pdf")
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    plt.xticks(fontsize=20)
-    plt.yticks(fontsize=20)
-    plt.legend(handles=legend_elements_age, fontsize=20)
-    plt.savefig(args.data_dir + '/' + "_UMAPmanual_age.pdf")
-
-    print('Done')
-
-def aux_stat(classes, args):
-    """
-    Final summary to plot the results and prepare the table to use it later to fit the data (R routine).
-    """
     # List of babies
-    summary_table = pd.read_csv(args.data_dir + '/' + 'baby_list_basic.csv')
+    summary_table = pd.read_csv(args.data_dir + '/' + 'new_baby_list.csv')
     summary = pd.DataFrame.to_numpy(summary_table)
     babies = summary[:, 0]
     age = summary[:, 1]
@@ -585,12 +606,20 @@ def aux_stat(classes, args):
     for i in range(0, len(colors)):
         colors[i] = 'k'
 
+    # class location
+    for c in range(0, len(classes)):
+        if classes[c] == 'CHNSP':
+            pos_CHNSP = c
+        elif classes[c] == 'FAN':
+            pos_FAN = c
+
     # From stat summary
     entropy_CHNSP = np.zeros((len(babies),))
     L2norm_CHNSP = np.zeros((len(babies),))
     ratio = []
     how_many_all = []
     how_many_classes = np.zeros((len(babies), len(classes)))
+    how_many_CHNSP = []
     MEAN_cov_adultFANpre_babyCHNSP = []
     MEAN_cov_adultFANpost_babyCHNSP = []
     MEAN_cov_babyCHNSP_self = []
@@ -599,7 +628,6 @@ def aux_stat(classes, args):
     MEAN_corr_adultFANpost_babyCHNSP = []
     MEAN_corr_babyCHNSP_self = []
     STD_babyCHNSP_self = []
-    dist_CHNSP_MAN = []
     dist_CHNSP_FAN_UMAP = []
     dist_CHNSP_FAN_PCA = []
     dist_CHNSP_FAN_tSNE = []
@@ -630,6 +658,7 @@ def aux_stat(classes, args):
         ratio.append(dataset_summary['Ratio'])
         how_many_all.append(np.sum(dataset_summary['how_many']))
         how_many_classes[i,:] = dataset_summary['how_many']
+        how_many_CHNSP.append(dataset_summary['how_many'][pos_CHNSP])
         MEAN_cov_adultFANpre_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['cov_adultFANpre_babyCHNSP'])))
         MEAN_cov_adultFANpost_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['cov_adultFANpost_babyCHNSP'])))
         MEAN_cov_babyCHNSP_self.append(np.mean(np.diagonal(dataset_summary['cov_BBself'])))
@@ -638,18 +667,20 @@ def aux_stat(classes, args):
         MEAN_corr_adultFANpost_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['corr_adultFANpost_babyCHNSP'])))
         MEAN_corr_babyCHNSP_self.append(np.mean(np.diagonal(dataset_summary['corr_BBself'])))
         STD_babyCHNSP_self.append(np.mean(np.sqrt(np.diagonal(dataset_summary['cov_BBself']))))
-        dist_CHNSP_MAN.append(dataset_summary['Dist_centrMAN'])
-        dist_CHNSP_FAN_UMAP.append(dataset_summary['Dist_centrFAN'])
-        dist_CHNSP_FAN_PCA.append(dataset_summary['Dist_centrFAN_PCA'])
-        dist_CHNSP_FAN_tSNE.append(dataset_summary['Dist_centrFAN_tSNE'])
-        centroid_CHNSP_self_UMAP.append(dataset_summary['centroid_mean_dis'][0,0])
-        centroid_CHNSP_self_PCA.append(dataset_summary['centroid_mean_dis_PCA'][0,0])
-        centroid_CHNSP_self_tSNE.append(dataset_summary['centroid_mean_dis_tSNE'][0,0])
+        # Centroids distance from CHNSP and FAN
+        dist_CHNSP_FAN_UMAP.append(dataset_summary['Dist_centr_UMAP'][pos_CHNSP, pos_FAN])
+        dist_CHNSP_FAN_PCA.append(dataset_summary['Dist_centr_PCA'][pos_CHNSP, pos_FAN])
+        dist_CHNSP_FAN_tSNE.append(dataset_summary['Dist_centr_tSNE'][pos_CHNSP, pos_FAN])
+        # Distance between CHNSP vocalizations and CHNSP centroid
+        centroid_CHNSP_self_UMAP.append(dataset_summary['centroid_mean_dis'][pos_CHNSP, pos_CHNSP])
+        centroid_CHNSP_self_PCA.append(dataset_summary['centroid_mean_dis_PCA'][pos_CHNSP, pos_CHNSP])
+        centroid_CHNSP_self_tSNE.append(dataset_summary['centroid_mean_dis_tSNE'][pos_CHNSP, pos_CHNSP])
         if i == 10:
             centroid_coord_CHNSP = dataset_summary['centroids'][0,:]
             centroid_coord_FAN = dataset_summary['centroids'][1,:]
 
     how_many_all = np.asarray(how_many_all)
+    how_many_CHNSP = np.asarray(how_many_CHNSP)
     entropy_CHNSP = np.asarray(entropy_CHNSP)
     baby_ID = np.asarray(baby_ID)
     agegroup = np.asarray(agegroup)
@@ -657,6 +688,36 @@ def aux_stat(classes, args):
     centroid_CHNSP_self_UMAP = np.asarray(centroid_CHNSP_self_UMAP)
     MEAN_cov_babyCHNSP_self_pre = np.asarray(MEAN_cov_babyCHNSP_self_pre)
     MEAN_cov_babyCHNSP_self = np.asarray(MEAN_cov_babyCHNSP_self)
+
+    # Mean, median, std of the same age.
+    ages = ['3mo', '6mo', '9mo', '18mo']
+    mean_age = np.zeros((len(ages),2))
+    median_age = np.zeros((len(ages),2))
+    std_age = np.zeros((len(ages),2))
+    j = 0
+    while j<len(ages):
+        mean_age[j,0] = np.mean(dist_CHNSP_FAN_UMAP[np.where(agegroup==ages[j])[0]])
+        mean_age[j,1] = np.mean(centroid_CHNSP_self_UMAP[np.where(agegroup==ages[j])[0]])
+        median_age[j,0] = np.median(dist_CHNSP_FAN_UMAP[np.where(agegroup==ages[j])[0]])
+        median_age[j,1] = np.median(centroid_CHNSP_self_UMAP[np.where(agegroup==ages[j])[0]])
+        std_age[j,0] = np.std(dist_CHNSP_FAN_UMAP[np.where(agegroup==ages[j])[0]])
+        std_age[j,1] = np.std(centroid_CHNSP_self_UMAP[np.where(agegroup==ages[j])[0]])
+        j = j+1
+
+    summary_table['CHNSPentropy'] = entropy_CHNSP
+    summary_table['NUMALLVOC'] = how_many_all
+    summary_table['NUMCHNSPVOC'] = how_many_CHNSP
+    summary_table['CHILDID'] = baby_ID
+    summary_table['AGEGROUP'] = agegroup
+    summary_table['CENTROID_CHSNP_FAN_UMAP'] = dist_CHNSP_FAN_UMAP
+    summary_table['CENTROID_CHSNP_FAN_PCA'] = dist_CHNSP_FAN_PCA
+    summary_table['CENTROID_CHSNP_FAN_tSNE'] = dist_CHNSP_FAN_tSNE
+    summary_table['CENTROIDdist_CHSNPself_UMAP'] = centroid_CHNSP_self_UMAP
+    summary_table['CENTROIDdist_CHSNPself_PCA'] = centroid_CHNSP_self_PCA
+    summary_table['CENTROIDdist_CHSNPself_tSNE'] = centroid_CHNSP_self_tSNE
+    summary_table['cov_BBself_pre'] = MEAN_cov_babyCHNSP_self_pre
+    summary_table['cov_BBself'] = MEAN_cov_babyCHNSP_self
+    summary_table.to_csv(args.data_dir + '/' + 'baby_list.csv')
 
     how_many_age = np.zeros((4, len(classes)))
     ages = ['3mo', '6mo', '9mo', '18mo']
@@ -678,121 +739,6 @@ def aux_stat(classes, args):
     print(how_many_age)
     input()
 
-    # Mean, median, std of the same age. First column: dist CHNSP_FAN. Second column: dist_SELF
-    ages = ['3mo', '6mo', '9mo', '18mo']
-    mean_age = np.zeros((len(ages),2))
-    median_age = np.zeros((len(ages),2))
-    std_age = np.zeros((len(ages),2))
-    j = 0
-    while j<len(ages):
-        mean_age[j,0] = np.mean(dist_CHNSP_FAN_UMAP[np.where(agegroup==ages[j])[0]])
-        mean_age[j,1] = np.mean(centroid_CHNSP_self_UMAP[np.where(agegroup==ages[j])[0]])
-        median_age[j,0] = np.median(dist_CHNSP_FAN_UMAP[np.where(agegroup==ages[j])[0]])
-        median_age[j,1] = np.median(centroid_CHNSP_self_UMAP[np.where(agegroup==ages[j])[0]])
-        std_age[j,0] = np.std(dist_CHNSP_FAN_UMAP[np.where(agegroup==ages[j])[0]])
-        std_age[j,1] = np.std(centroid_CHNSP_self_UMAP[np.where(agegroup==ages[j])[0]])
-        j = j+1
-
-    summary_table['CHNSPentropy'] = entropy_CHNSP
-    summary_table['#voc'] = how_many_all
-    summary_table['CHILDID'] = baby_ID
-    summary_table['AGEGROUP'] = agegroup
-    summary_table['CENTROID_CHSNP_FAN_UMAP'] = dist_CHNSP_FAN_UMAP
-    summary_table['CENTROID_CHSNP_FAN_PCA'] = dist_CHNSP_FAN_PCA
-    summary_table['CENTROID_CHSNP_FAN_tSNE'] = dist_CHNSP_FAN_tSNE
-    summary_table['CENTROIDdist_CHSNPself_UMAP'] = centroid_CHNSP_self_UMAP
-    summary_table['CENTROIDdist_CHSNPself_PCA'] = centroid_CHNSP_self_PCA
-    summary_table['CENTROIDdist_CHSNPself_tSNE'] = centroid_CHNSP_self_tSNE
-    summary_table['cov_BBself_pre'] = MEAN_cov_babyCHNSP_self_pre
-    summary_table['cov_BBself'] = MEAN_cov_babyCHNSP_self
-    summary_table.to_csv(args.data_dir + '/' + 'baby_list.csv')
-
-    print('Done')
-
-def plot_stat(classes, args):
-    import pyreadr as readR
-
-    # List of babies
-    summary_table = pd.read_csv(args.data_dir + '/' + 'baby_list_basic.csv')
-    summary = pd.DataFrame.to_numpy(summary_table)
-    babies = summary[:, 0]
-    age = summary[:, 1]
-
-    # List of colors (each color is a particular baby)
-    colors = summary[:,2]
-    for i in range(0, len(colors)):
-        colors[i] = 'k'
-
-    # From stat summary
-    entropy_CHNSP = np.zeros((len(babies),))
-    L2norm_CHNSP = np.zeros((len(babies),))
-    ratio = []
-    how_many_all = []
-    how_many_classes = np.zeros((len(babies), len(classes)))
-    MEAN_cov_adultFANpre_babyCHNSP = []
-    MEAN_cov_adultFANpost_babyCHNSP = []
-    MEAN_cov_babyCHNSP_self = []
-    MEAN_cov_babyCHNSP_self_pre = []
-    MEAN_corr_adultFANpre_babyCHNSP = []
-    MEAN_corr_adultFANpost_babyCHNSP = []
-    MEAN_corr_babyCHNSP_self = []
-    STD_babyCHNSP_self = []
-    dist_CHNSP_MAN = []
-    dist_CHNSP_FAN_UMAP = []
-    dist_CHNSP_FAN_PCA = []
-    dist_CHNSP_FAN_tSNE = []
-    baby_ID = []
-    agegroup = []
-    exp_entropy = np.zeros((len(babies),))
-    centroid_CHNSP_self_UMAP = []
-    centroid_CHNSP_self_PCA = []
-    centroid_CHNSP_self_tSNE = []
-    for i in range(0, len(babies)):
-        print(babies[i])
-
-        baby_ID.append(babies[i][1:4])
-        if age[i] < 180:
-            agegroup.append('3mo')
-        elif (age[i]>=180 and age[i]<250):
-            agegroup.append('6mo')
-        elif (age[i]>=250 and age[i]<500):
-            agegroup.append('9mo')
-        else:
-            agegroup.append('18mo')
-
-        dataset_summary = np.load(args.data_dir + '/' + babies[i] + '_stat_summary.npy', allow_pickle=True)
-        dataset_summary = dataset_summary.item()
-        entropy_CHNSP[i] = dataset_summary['entropy'][0]
-        exp_entropy[i] = 2**entropy_CHNSP[i]
-        L2norm_CHNSP[i] = dataset_summary['L2norm'][0]
-        ratio.append(dataset_summary['Ratio'])
-        how_many_all.append(np.sum(dataset_summary['how_many']))
-        how_many_classes[i,:] = dataset_summary['how_many']
-        MEAN_cov_adultFANpre_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['cov_adultFANpre_babyCHNSP'])))
-        MEAN_cov_adultFANpost_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['cov_adultFANpost_babyCHNSP'])))
-        MEAN_cov_babyCHNSP_self.append(np.mean(np.diagonal(dataset_summary['cov_BBself'])))
-        MEAN_cov_babyCHNSP_self_pre.append(np.mean(np.diagonal(dataset_summary['cov_BBself_pre'])))
-        MEAN_corr_adultFANpre_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['corr_adultFANpre_babyCHNSP'])))
-        MEAN_corr_adultFANpost_babyCHNSP.append(np.mean(np.diagonal(dataset_summary['corr_adultFANpost_babyCHNSP'])))
-        MEAN_corr_babyCHNSP_self.append(np.mean(np.diagonal(dataset_summary['corr_BBself'])))
-        STD_babyCHNSP_self.append(np.mean(np.sqrt(np.diagonal(dataset_summary['cov_BBself']))))
-        dist_CHNSP_MAN.append(dataset_summary['Dist_centrMAN'])
-        dist_CHNSP_FAN_UMAP.append(dataset_summary['Dist_centrFAN'])
-        dist_CHNSP_FAN_PCA.append(dataset_summary['Dist_centrFAN_PCA'])
-        dist_CHNSP_FAN_tSNE.append(dataset_summary['Dist_centrFAN_tSNE'])
-        centroid_CHNSP_self_UMAP.append(dataset_summary['centroid_mean_dis'][0,0])
-        centroid_CHNSP_self_PCA.append(dataset_summary['centroid_mean_dis_PCA'][0,0])
-        centroid_CHNSP_self_tSNE.append(dataset_summary['centroid_mean_dis_tSNE'][0,0])
-        if i == 10:
-            centroid_coord_CHNSP = dataset_summary['centroids'][0,:]
-            centroid_coord_FAN = dataset_summary['centroids'][1,:]
-
-    entropy_CHNSP = np.asarray(entropy_CHNSP)
-    dist_CHNSP_FAN_UMAP = np.asarray(dist_CHNSP_FAN_UMAP)
-    centroid_CHNSP_self_UMAP = np.asarray(centroid_CHNSP_self_UMAP)
-    MEAN_cov_babyCHNSP_self_pre = np.asarray(MEAN_cov_babyCHNSP_self_pre)
-    MEAN_cov_babyCHNSP_self = np.asarray(MEAN_cov_babyCHNSP_self)
-
     # Read fit from R
     aux = readR.read_r(args.data_dir + '/' + 'UMAP_CHNSPcentroidSELF.Rdata')
     UMAP_fit_CHNSPselfCENTROID = aux['pred']
@@ -810,6 +756,11 @@ def plot_stat(classes, args):
     UMAP_CHNSPselfPREMeanCOVARIANCE = aux['pred']
     aux = readR.read_r(args.data_dir + '/' + 'UMAP_CHNSPselfMeanCOVARIANCE.Rdata')
     UMAP_CHNSPselfMeanCOVARIANCE = aux['pred']
+
+    # TODO sistema qui
+    #if args.R == True:
+       # UMAP_fit_CHNSPselfCENTROID =  1.187012 - 0.588681 * np.linspace(0,np.max(age),len(age)) -0.386220  * np.linspace(0,np.max(age),len(age))**2
+       # UMAP_fit_CHNSP_FAN_CENTROID = 0.8034 + 0.2082 * np.linspace(0,np.max(age),len(age)) + 0.8623 * np.linspace(0,np.max(age),len(age))**2
 
     fig, ax = plt.subplots()
     for i in range(0, len(babies)):
@@ -883,16 +834,6 @@ def plot_stat(classes, args):
 
     fig, ax = plt.subplots()
     for i in range(0, len(babies)):
-        plt.plot(age[i], ratio[i][2], color=colors[i], marker='*')
-    plt.savefig(args.data_dir + '/' + 'ratioMAN.pdf')
-
-    fig, ax = plt.subplots()
-    for i in range(0, len(babies)):
-        plt.plot(age[i], dist_CHNSP_MAN[i], color=colors[i], marker='*')
-    plt.savefig(args.data_dir + '/' + 'dist_CHNSP_MAN.pdf')
-
-    fig, ax = plt.subplots()
-    for i in range(0, len(babies)):
         plt.plot(age[i], dist_CHNSP_FAN_UMAP[i], color=colors[i], marker='*')
         ax.set_xlabel('Age (in days)', fontsize=15)
         ax.set_ylabel('Distance between centroids', fontsize=15)
@@ -950,6 +891,8 @@ def plot_stat(classes, args):
     fig, ax = plt.subplots()
     for i in range(0, len(babies)):
         plt.plot(age[i], MEAN_cov_babyCHNSP_self[i], color=colors[i], marker='*')
+        ax.set_xlabel('Age (in days)', fontsize=15)
+        ax.set_ylabel('Mean covariance between CHNSP', fontsize=15)
     plt.plot(sorted(age), UMAP_CHNSPselfMeanCOVARIANCE, 'k', lw=0.5)
     plt.savefig(args.data_dir + '/' + 'MEAN_cov_babyCHNSP_self.pdf')
 
@@ -988,50 +931,6 @@ def plot_stat(classes, args):
 
     plt.close('all')
 
-    # Plot one example baby
-    # Load data
-    summary = pd.read_csv(
-        args.data_dir + '/' + 'ALL_BABYADULTsummary_' + babies[10] + '_summary_LENAlabels__opensmile_day_UMAP_mfcc.csv')
-    # Sort data frame
-    summary = summary.sort_values("time ID", ignore_index=True)
-    # MEMO ['umap ID', 'filename', 'time ID', 'label', 'umap sum x', 'umap sum y', 'umap avg x', 'umap avg y']
-
-    umapX = summary["umap sum x"]
-    umapY = summary["umap sum y"]
-
-    labels = ['CHNSP', 'centroid CHNSP', 'FAN', 'centroid FAN']
-    classes_colors = ['darkblue', 'red']
-    handles_colors = ['darkblue', 'deepskyblue', 'red', 'pink']
-    legend_elements = []
-    for l in range(0, len(labels)):
-        legend_elements.append(
-            Line2D([], [], marker='o', color=handles_colors[l], markersize=10, label=labels[l]))
-
-    new_umapX = []
-    new_umapY = []
-    colors_new = []
-    i = 0
-    while i < len(umapX):
-        j = 0
-        while j < 2:
-            if summary["label"][i] == classes[j]:
-                colors_new.append(classes_colors[j])
-                new_umapX.append(umapX[i])
-                new_umapY.append(umapY[i])
-            j = j + 1
-        i = i + 1
-
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.scatter(new_umapX, new_umapY, c=colors_new, cmap='manual', s=1, alpha=0.8)
-    ax.scatter(centroid_coord_CHNSP[0], centroid_coord_CHNSP[1], c='deepskyblue', s=20)
-    ax.scatter(centroid_coord_FAN[0], centroid_coord_FAN[1], c='pink', s=20)
-    ax.set_xlim(np.min(umapX)-0.5, np.max(umapX)+0,5)
-    ax.set_ylim(np.min(umapY)-0.5, np.max(umapY)+0.5)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    plt.legend(handles=legend_elements)
-    plt.savefig(args.data_dir + '/' + babies[10] + "_exampleBABY.pdf")
-
     print('Done')
 
 if __name__ == '__main__':
@@ -1040,7 +939,7 @@ if __name__ == '__main__':
     import sys
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--option', type=str, choices=['multidim_all', 'plot', 'stat', 'aux_stat', 'plot_stat'])
+    parser.add_argument('--option', type=str, choices=['multidim_all', 'plot', 'stat', 'plot_stat_complete'])
     parser.add_argument('--data_dir', type=str)
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--baby_id', type=str)
@@ -1071,6 +970,10 @@ if __name__ == '__main__':
     UMAP_parameters_args.add_argument('--all_labels', type=list, help='All the possible labels',
                                       default=['CHF', 'CHNNSP', 'CHNSP', 'CXF', 'CXN', 'FAF', 'FAN', 'MAF', 'MAN', 'NOF', 'NON', 'OLF', 'OLN', 'SIL', 'TVF', 'TVN'])
 
+    comparison_args = parser.add_argument_group('comparison')
+    comparison_args.add_argument('--all', type = bool, help='Are we considering all the babies in the same space?', default=False)
+    comparison_args.add_argument('--R', type = bool, help='True if R fit curve is defined manually. Change coeffs.', default=True)
+
     args = parser.parse_args()
 
     if args.output_dir != None:
@@ -1081,43 +984,48 @@ if __name__ == '__main__':
         # Classes
         if args.labels == 'lena':
             # classes = ['CHNNSP', 'CHNSP', 'FAF', 'FAN', 'MAN', 'TVF', 'TVN']
-            # classes = ['CHNSP', 'FAN', 'MAN']
-            classes = ['CHNSP', 'CHNNSP']
+            # classes = ['CHNNSP', 'CHNSP', 'FAN', 'MAN']
+            #classes = ['CHNSP', 'FAN', 'MAN']
+            #classes = ['CHNSP', 'FAN']
+            #classes = ['CHNSP', 'CHNNSP']
+            #classes = ['CHNSP', 'CHNNSP', 'FAN']
+            classes = ['CHNSP']
 
-        # List of babies
-        summary = pd.read_csv(args.data_dir + '/' + 'baby_list_basic.csv')
+            # List of babies
+        summary = pd.read_csv(args.data_dir + '/' + 'baby_list_basicONLYallAGESandMORE.csv')
         summary = pd.DataFrame.to_numpy(summary)
         babies = summary[:, 0]
         age = summary[:,1]
+        color = summary[:,2]
 
-        multidim_all(classes, babies, age, args)
+        multidim_all(classes, babies, age, color, args)
 
     if args.option == 'plot':
         #classes = ['CHNSP', 'FAN', 'MAN']
-        classes = ['CHNSP', 'CHNNSP']
+        #classes = ['CHNSP', 'FAN']
+        #classes = ['CHNNSP', 'CHNSP']
+        classes = ['CHNSP']
         my_plot(classes, args)
 
     if args.option == 'stat':
         # List of babies
-        summary = pd.read_csv(args.data_dir + '/' + 'baby_list_basic.csv')
+        summary = pd.read_csv(args.data_dir + '/' + 'new_baby_list.csv')
         summary = pd.DataFrame.to_numpy(summary)
         babies = summary[:,0]
 
         #classes = ['CHNSP', 'FAN', 'MAN']  # ['CHNNSP', 'CHNSP', 'FAF', 'FAN', 'MAN']
+        #classes = ['CHNSP', 'FAN']
+        #classes = ['CHNNSP', 'CHNSP', 'FAN', 'MAN']
         classes = ['CHNSP', 'CHNNSP']
         for i in range(0,len(babies)):
             print(babies[i])
             if babies[i] != '0932_000602a':   #ICIS without '0583_000605':
                 stat(classes, babies[i], args)
 
-    if args.option == 'aux_stat':
+    if args.option == 'plot_stat_complete':
         #classes = ['CHNSP', 'FAN', 'MAN']
+        #classes = ['CHNSP', 'FAN']
         classes = ['CHNSP', 'CHNNSP']
-        aux_stat(classes, args)
+        plot_stat_complete(classes, args)
 
-    if args.option == 'plot_stat':
-        #classes = ['CHNSP', 'FAN', 'MAN']
-        classes = ['CHNSP', 'CHNNSP']
-        plot_stat(classes, args)
-
-    ### Example: python3 BabyExperience.py --data_dir /Users/silviapagliarini/Documents/opensmile/HumanData_analysis --option comparison
+    ### Example: python3 BabyExperience.py --data_dir /Users/silviapagliarini/Documents/opensmile/HumanData_analysis --option plot
