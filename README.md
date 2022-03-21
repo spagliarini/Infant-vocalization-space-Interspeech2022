@@ -17,3 +17,4 @@
 ## Vocalizations space and statistical analysis
 1. Compute the low-dimensional representation (UMPA, t-SNE, PCA). 
 2. Compute statistical properties of the clusters across families and across time (age): python and R codes.
+3. Validation and modal value. Modal_value.py allows to group all the listeners new labels, compute the modal value for each vocalization analyzed by the listeners, and define an "average label".
