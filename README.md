@@ -1,7 +1,11 @@
 # Infant-vocalization-space-Interspeech2022
 
 ## Pre-processing
-1. Extraction of single vocalizations using MATLAB routine. Vocalizations are extracted based on the automatic LENA system. References:
+1. Extraction of single vocalizations based on the automatic LENA system. 
+* label creation
+* MATLAB routine based on the labels and the whole recording
+
+References:
 > J. Gilkerson and J. A. Richards, “The lena natural language study,” Boulder, CO: LENA Foundation. Retrieved March, vol. 3, p. 2009, 2008.
  
 > D. Xu, U. Yapanel, S. Gray, J. Gilkerson, J. Richards, and J. Hansen, “Signal processing for young child speech language development,” in First Workshop on Child, Computer and Interaction, 2008.
@@ -15,6 +19,16 @@
 * merge: a function needed for the validation part to merge the human re-labeled vocalization with the original automatic labels, and use the new labels to extract the vocalizations as in point 1. 
 
 ## Vocalizations space and statistical analysis
-1. Compute the low-dimensional representation (UMPA, t-SNE, PCA). 
-2. Compute statistical properties of the clusters across families and across time (age): python and R codes.
-3. Validation and modal value. Modal_value.py allows to group all the listeners new labels, compute the modal value for each vocalization analyzed by the listeners, and define an "average label".
+1. Compute the low-dimensional representation (UMPA, t-SNE, PCA). The python file vocSpace_analysis.py contains:
+* multidim_all: function to compute UMAP and tSNE space from the MFCC coefficients collection. It creates summary tables (general and baby-wise with the coordinates of UMAP/tSNE space)
+* my_plot: manual plot of UMAP space (Figure 1 in the paper).
+
+2. Compute statistical properties of the clusters across families and across time (age). The python file vocSpace_analysis.py contains:
+* stat: function to compute the statistical quantities (e.g.: centorids, distance between centroids). It creates a summary table containing the statistical properties.
+* plot_stat_complete: function to plot the desired quantites (e.g. Figure 2 and 3) and extract the data in Table 1. It also adds values to the summary tables with information regarding the centroids and statistical properties. This table is needed to run the following R analysis. Note: run once before R and again after R. 
+
+3. The two R files contain the functions to fit the data. The output can be then loaded into plot_stat_complete to obtain figures and correlation measure.
+
+4. Validation and modal value. 
+* Modal_value.py allows to group all the listeners new labels, compute the modal value for each vocalization analyzed by the listeners, and define an "average label".
+* Then all the pre-processing + analysis runs as described above.
