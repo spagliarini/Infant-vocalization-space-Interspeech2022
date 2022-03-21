@@ -7,10 +7,8 @@ Created on Tue Aug 07 14:42:32 2021
 """
 import os
 import numpy as np
-import scipy.signal as signal
 import pandas as pd
 import csv
-import arff
 from pydub import AudioSegment
 import scipy.io.wavfile as wav
 
@@ -79,50 +77,9 @@ def opensmile_executable(data, baby_id, classes, args):
 
     print('Done')
 
-def add_silence(data, args):
-    """
-    Add silence to existing recordings.
-
-    INPUT
-    List of the recordings containing single syllables (previously selected).
-    Make a copy of the directory, since this code is going to overwrite the recordings.
-
-    OUTPUT
-    Recordings containing filtered single syllables + silence for a total duration equal to one second.
-    """
-    duration = np.zeros((np.size(data),))
-
-    for i in range(0, len(data)):
-        #read the syllable
-        sr, samples = wav.read(data[i])
-
-        if samples.size == 0:
-            os.remove(data[i])
-
-    for i in range(0, len(data)):
-        #read the syllable
-        or_rec = AudioSegment.from_wav(data[i])
-        #or_rec = or_rec.high_pass_filter(700, order=5)
-
-        duration[i] = np.size(or_rec.get_array_of_samples())
-        if np.int(1000*duration[i]/args.sr)<args.sd:
-            # compute silence and add to the recording
-            silence = AudioSegment.silent(duration=args.sd-np.round(1000*np.size(or_rec.get_array_of_samples())/args.sr))
-
-            sound = or_rec + silence
-            # export the audio (overwriting the old one)
-            sound.export(data[i], format ="wav")
-
-        elif np.int(1000*duration[i]/args.sr)>args.sd:
-            sound = or_rec[0:args.sd]
-            # export the audio (overwriting the old one)
-            sound.export(data[i], format="wav")
-
-    print('Done')
-
 def list(args):
     """
-    Create a list of all the babies in the dataset in order to simplify the followinf steps of the analysis.
+    Create a list of all the babies in the dataset in order to simplify the following steps of the analysis.
 
     INPUT
     - path to directory (subdirectories should be the single family directories).
@@ -201,7 +158,7 @@ if __name__ == '__main__':
     import sys
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--option', type=str, choices=['LENAlabels', 'HUMANlabels', 'list', 'executeOS'])
+    parser.add_argument('--option', type=str, choices=['merge', 'list', 'executeOS'])
     parser.add_argument('--data_dir', type=str)
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--baby_id', type = str)
@@ -277,13 +234,7 @@ if __name__ == '__main__':
     if args.option == 'list':
         list(args)
 
-    if args.option == 'silence':
-        # Load data
-        dataset = sorted(glob2.glob(args.data_dir + '/' + args.baby_id[0:4] + '/' + args.baby_id + '_segments' + '/' + '*.wav'))
-    
-        add_silence(dataset, args)
-
-    if args.option == 'merge_human_labels':
+    if args.option == 'merge':
         babies_csv = pd.read_csv(args.data_dir + '/baby_list.csv')
         babies = babies_csv["name"]
         merge_labels(babies, args)
