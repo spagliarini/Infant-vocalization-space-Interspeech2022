@@ -14,8 +14,6 @@
 * executeOS: a function to create an automatic bash file useful to run the opensmile pre-processing.
 * merge: a function needed for the validation part to merge the human re-labeled vocalization with the original automatic labels, and use the new labels to extract the vocalizations as in point 1. 
 
-4. 
-
 ## Vocalizations space and statistical analysis
 1. Compute the low-dimensional representation (UMPA, t-SNE, PCA). 
 2. Compute statistical properties of the clusters across families and across time (age): python and R codes.
