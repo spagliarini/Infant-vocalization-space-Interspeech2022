@@ -1,7 +1,7 @@
 library(lme4)
 library(lmerTest)
 
-setwd('~/Documents/opensmile/HumanData_analysis/completeDataset/ONLYallAGES_combined_CHNSP_FAN_portion')
+setwd('~/Documents/opensmile/HumanData_analysis/completeDataset/AllAges_CHNSP_FAN_MAN')
 ourdata = read.csv('baby_list.csv')
 
 plot(ourdata$AGE, ourdata$CHNSPentropy,
@@ -11,7 +11,8 @@ plot(ourdata$AGE, ourdata$CHNSPentropy,
 ######
 # Read dataset
 ######
-CHNSPentropy_UMAP = ourdata$CHNSPentropy
+CHNSPentropy_UMAP = ourdata$CHNSPentropyUMAP
+CHNSPentropy_tSNE = ourdata$CHNSPentropytSNE
 CHNSPcentroid_self_UMAP = ourdata$CENTROIDdist_CHSNPself_UMAP
 CHNSP_FAN_centroid_UMAP = ourdata$CENTROID_CHSNP_FAN_UMAP
 CHNSPcentroid_self_PCA = ourdata$CENTROIDdist_CHSNPself_PCA
@@ -24,6 +25,39 @@ AGE =ourdata$AGE
 AgeGroup = ourdata$AGEGROUP 
 ChildID = ourdata$CHILDID
 CHILDvocNumber = ourdata$NUMCHNSPVOC
+
+#############################################
+# ENTROPY
+#############################################
+# UMAP
+plot(ourdata$AGE, ourdata$CHNSPentropyUMAP,
+     xlab = "Infant age (days)",
+     ylab = "CHNSP entropy UMAP")
+
+lmPoly = lmer(CHNSPentropy_UMAP ~ poly(AGE,2) + (1|ChildID) + CHILDvocNumber, data = ourdata)
+summary(lmPoly)
+confint(lmPoly)
+
+predCHNSP_entropy = predict(lmPoly)
+ix = sort(ourdata$AGE,index.return=T)$ix
+pred = predCHNSP_entropy[ix]
+
+lines(ourdata$AGE[ix],predCHNSP_entropy[ix])
+
+# tSNE
+plot(ourdata$AGE, ourdata$CHNSPentropytSNE,
+     xlab = "Infant age (days)",
+     ylab = "CHNSP entropy UMAP")
+
+lmPoly = lmer(CHNSPentropytSNE ~ poly(AGE,2) + (1|ChildID) + CHILDvocNumber, data = ourdata)
+summary(lmPoly)
+confint(lmPoly)
+
+predCHNSP_entropy = predict(lmPoly)
+ix = sort(ourdata$AGE,index.return=T)$ix
+pred = predCHNSP_entropy[ix]
+
+lines(ourdata$AGE[ix],predCHNSP_entropy[ix])
 
 ##############################################
 # MEAN DISTANCE FROM THE CHNSP CENTROID (self)
@@ -154,3 +188,4 @@ ix = sort(ourdata$AGE,index.return=T)$ix
 pred = predCHNSP_cov[ix]
 
 lines(ourdata$AGE[ix],predCHNSP_cov[ix])
+
