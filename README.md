@@ -1,9 +1,9 @@
 # Infant-vocalization-space-Interspeech2022
 
 ## Pre-processing
-1. Extraction of single vocalizations based on the automatic LENA system. 
-* label creation
-* MATLAB routine based on the labels and the whole recording
+1. Extraction of single vocalizations based on the automatic LENA system (see https://github.com/HomeBankCode/lena-its-tools?):
+* label creation (using segments.pl in the mentioned repository);
+* MATLAB routine based on the labels and the whole recording (using getIndividualAudioSegments.m in the mentioned repository).
 
 References:
 > J. Gilkerson and J. A. Richards, “The lena natural language study,” Boulder, CO: LENA Foundation. Retrieved March, vol. 3, p. 2009, 2008.
