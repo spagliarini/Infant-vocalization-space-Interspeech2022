@@ -526,7 +526,7 @@ def plot_stat_complete(classes, args):
     for i in range(0, len(colors)):
         colors[i] = 'k'
 
-    # class location
+    # Class location
     for c in range(0, len(classes)):
         if classes[c] == 'CHNSP':
             pos_CHNSP = c
