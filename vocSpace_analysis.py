@@ -497,11 +497,7 @@ def stat(classes, baby_id, args):
             dist_centroids_tSNE[i,j] = np.linalg.norm(centroids_tSNE[i]-centroids_tSNE[j])
 
     # Save a dictionary with the quantities
-    dataset_summary = {'how_many': how_many, 'entropy_UMAP': entropy_UMAP, 'entropy_tSNE': entropy_tSNE, 'cov_adultFANpre_babyCHNSP': cov_adultFANpre_babyCHNSP,
-                       'cov_adultFANpost_babyCHNSP': cov_adultFANpost_babyCHNSP, 'cov_BBself': cov_babyCHNSP_self,
-                       'cov_BBself_pre': cov_babyCHNSP_self_pre,
-                       'corr_adultFANpre_babyCHNSP': corr_coeff_adultFANpre_babyCHNSP,
-                       'corr_adultFANpost_babyCHNSP': corr_coeff_adultFANpost_babyCHNSP, 'corr_BBself': corr_coeff_baby_CHNSP_self,
+    dataset_summary = {'how_many': how_many, 'entropy_UMAP': entropy_UMAP, 'entropy_tSNE': entropy_tSNE, 
                        'Dist_centr_UMAP': dist_centroids, 'centroids': centroids, 'centroid_mean_dis': centroids_mean_dist,
                        'Dist_centr_PCA': dist_centroids_PCA, 'centroids_PCA': centroids_PCA, 'centroid_mean_dis_PCA': centroids_mean_dist_PCA,
                        'Dist_centr_tSNE': dist_centroids_tSNE, 'centroids_tSNE': centroids_tSNE, 'centroid_mean_dis_tSNE': centroids_mean_dist_tSNE,
