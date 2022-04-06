@@ -18,6 +18,7 @@ import pandas as pd
 import csv
 import matplotlib
 
+csfont = {'fontname':'Times New Roman'}
 
 # entropy
 def entropy(hist):
