@@ -516,10 +516,10 @@ def plot_stat_complete(classes, args):
     babies = summary[:, 0]
     age = summary[:, 1]
 
-    # List of colors (each color is a particular baby)
-    colors = summary[:,2]
-    for i in range(0, len(colors)):
-        colors[i] = 'k'
+    # List of colors
+    colors = []
+    for i in range(0, len(babies)):
+        colors.append('k')
 
     # Class location
     for c in range(0, len(classes)):
