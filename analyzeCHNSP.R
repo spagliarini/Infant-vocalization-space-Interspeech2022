@@ -128,7 +128,7 @@ ix = sort(ourdata$AGE,index.return=T)$ix
 pred = predCentroidself[ix]
 
 lines(ourdata$AGE[ix],predCentroidself[ix])
-save(pred, file="tSNE_CHNSPcentroidSELF.Rdata")
+save(pred, file="tSNE_CHNNSPcentroidSELF.Rdata")
 
 #### CHNNSP
 # UMAP
@@ -145,7 +145,7 @@ ix = sort(ourdata$AGE,index.return=T)$ix
 pred = predCentroidself[ix]
 
 lines(ourdata$AGE[ix],predCentroidself[ix])
-save(pred, file="UMAP_CHNSPcentroidSELF.Rdata")
+save(pred, file="UMAP_CHNNSPcentroidSELF.Rdata")
 
 ######################################
 # DISTANCE CENTROIDS CHNSP versus FAN
@@ -252,9 +252,10 @@ lmPoly = lm(CHNNSP_CHNSP_centroid_UMAP ~ poly(AGE,2), data = ourdata)
 summary(lmPoly)
 confint(lmPoly)
 
-predCHNNSP_MAN = predict(lmPoly)
+predCHNNSP_CHNSP = predict(lmPoly)
 ix = sort(ourdata$AGE,index.return=T)$ix
-pred = predCHNNSP_MAN[ix]
+pred = predCHNNSP_CHNSP[ix]
 
 lines(ourdata$AGE[ix],predCHNNSP_MAN[ix])
-save(pred, file="UMAP_CHNNSP_MAN_centroid.Rdata")
+save(pred, file="UMAP_CHNNSP_CHNSP_centroid.Rdata")
+
