@@ -497,12 +497,11 @@ def stat(classes, baby_id, args):
             dist_centroids_tSNE[i,j] = np.linalg.norm(centroids_tSNE[i]-centroids_tSNE[j])
 
     # Save a dictionary with the quantities
-    dataset_summary = {'how_many': how_many, 'entropy_UMAP': entropy_UMAP, 'entropy_tSNE': entropy_tSNE, 
+    dataset_summary = {'how_many': how_many, 'entropy_UMAP': entropy_UMAP, 'entropy_tSNE': entropy_tSNE,
                        'Dist_centr_UMAP': dist_centroids, 'centroids': centroids, 'centroid_mean_dis': centroids_mean_dist,
                        'Dist_centr_PCA': dist_centroids_PCA, 'centroids_PCA': centroids_PCA, 'centroid_mean_dis_PCA': centroids_mean_dist_PCA,
                        'Dist_centr_tSNE': dist_centroids_tSNE, 'centroids_tSNE': centroids_tSNE, 'centroid_mean_dis_tSNE': centroids_mean_dist_tSNE,
-                       'Ratio': ratio, 'Wiener_entropy': wiener, 'Mean_pitch': mean_pitch, 'Min_pitch': min_pitch,
-                       'Max_pitch': max_pitch, 'All_pitches': pitch, 'L2norm': L2norm}
+                       'Ratio': ratio}
     np.save(args.data_dir + '/' + baby_id + '_stat_summary.npy', dataset_summary)
 
     print('Done')
