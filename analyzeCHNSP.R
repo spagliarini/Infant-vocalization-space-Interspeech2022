@@ -1,7 +1,7 @@
 library(lme4)
 library(lmerTest)
 
-setwd('~/Documents/opensmile/HumanData_analysis/completeDataset/AllAges_CHNNSP_CHNSP_FAN_MAN')
+setwd('~/Documents/opensmile/HumanData_analysis/completeDataset/AllAges_CHNNSP_CHNSP_FAN_MAN_100_62')
 ourdata = read.csv('baby_list.csv')
 
 ######
