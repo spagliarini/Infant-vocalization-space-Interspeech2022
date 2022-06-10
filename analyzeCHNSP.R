@@ -1,7 +1,7 @@
 library(lme4)
 library(lmerTest)
 
-setwd('~/Documents/opensmile/HumanData_analysis/completeDataset/AllAges_CHNNSP_CHNSP_FAN_MAN_100_62')
+setwd('~/Documents/opensmile/HumanData_analysis/completeDataset/AllAges_CHNNSP_CHNSP_FAN_MAN_200')
 ourdata = read.csv('baby_list.csv')
 
 ######
@@ -24,6 +24,34 @@ CHNNSP_CHNSP_centroid_UMAP = ourdata$CENTROID_CHNNSP_CHNSP_UMAP
 AGE =ourdata$AGE
 AgeGroup = ourdata$AGEGROUP 
 ChildID = ourdata$CHILDID
+
+# z_norm values (z_score)
+mean_CHNSPentropy_UMAP = mean(CHNSPentropy_UMAP)
+mean_CHNSPentropy_tSNE = mean(CHNSPentropy_tSNE)
+mean_CHNSPcentroid_self_UMAP = mean(CHNSPcentroid_self_UMAP)
+mean_CHNNSPcentroid_self_UMAP = mean(CHNNSPcentroid_self_UMAP)
+mean_CHNSP_FAN_centroid_UMAP = mean(CHNSP_FAN_centroid_UMAP)
+mean_CHNSP_MAN_centroid_UMAP = mean(CHNSP_MAN_centroid_UMAP)
+mean_CHNNSP_FAN_centroid_UMAP = mean(CHNNSP_FAN_centroid_UMAP)
+mean_CHNNSP_MAN_centroid_UMAP = mean(CHNNSP_MAN_centroid_UMAP)
+
+sd_CHNSPentropy_UMAP = sd(CHNSPentropy_UMAP)
+sd_CHNSPentropy_tSNE = sd(CHNSPentropy_tSNE)
+sd_CHNSPcentroid_self_UMAP = sd(CHNSPcentroid_self_UMAP)
+sd_CHNNSPcentroid_self_UMAP = sd(CHNNSPcentroid_self_UMAP)
+sd_CHNSP_FAN_centroid_UMAP = sd(CHNSP_FAN_centroid_UMAP)
+sd_CHNSP_MAN_centroid_UMAP = sd(CHNSP_MAN_centroid_UMAP)
+sd_CHNNSP_FAN_centroid_UMAP = sd(CHNNSP_FAN_centroid_UMAP)
+sd_CHNNSP_MAN_centroid_UMAP = sd(CHNNSP_MAN_centroid_UMAP)
+
+z_CHNSPentropy_UMAP = (CHNSPentropy_UMAP - mean_CHNSPentropy_UMAP)/sd_CHNSPentropy_UMAP
+z_CHNSPentropy_tSNE = (CHNSPentropy_tSNE - mean_CHNSPentropy_tSNE)/sd_CHNSPentropy_tSNE
+z_CHNSPcentroid_self_UMAP = (CHNSPcentroid_self_UMAP - mean_CHNSPcentroid_self_UMAP)/sd_CHNSPcentroid_self_UMAP
+z_CHNNSPcentroid_self_UMAP = (CHNNSPcentroid_self_UMAP - mean_CHNNSPcentroid_self_UMAP)/sd_CHNSPcentroid_self_UMAP
+z_CHNSP_FAN_centroid_UMAP = (CHNSP_FAN_centroid_UMAP - mean_CHNSP_FAN_centroid_UMAP)/sd_CHNSP_FAN_centroid_UMAP
+z_CHNSP_MAN_centroid_UMAP = (CHNSP_MAN_centroid_UMAP - mean_CHNSP_MAN_centroid_UMAP)/sd_CHNSP_MAN_centroid_UMAP
+z_CHNNSP_FAN_centroid_UMAP = (CHNNSP_FAN_centroid_UMAP - mean_CHNNSP_FAN_centroid_UMAP)/sd_CHNNSP_FAN_centroid_UMAP
+z_CHNNSP_MAN_centroid_UMAP = (CHNNSP_MAN_centroid_UMAP - mean_CHNNSP_MAN_centroid_UMAP)/sd_CHNNSP_MAN_centroid_UMAP
 
 #############################################
 # ENTROPY
@@ -258,4 +286,3 @@ pred = predCHNNSP_CHNSP[ix]
 
 lines(ourdata$AGE[ix],predCHNNSP_MAN[ix])
 save(pred, file="UMAP_CHNNSP_CHNSP_centroid.Rdata")
-
